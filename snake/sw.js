@@ -14,7 +14,7 @@ self.addEventListener('install', event => {
 self.addEventListener('fetch', function(event) {
   var requrl = event.request?event.request.url:'';
   //不处理POST或者跨域请求或者http请求，也不处理非dist下的文件请求
-  if (requrl && (event.request.method !== 'GET' || !requrl.startsWith(origin) || requrl.indexOf('/sw.js')==-1)){
+  if (requrl && (event.request.method !== 'GET' || !requrl.startsWith(origin) || requrl.indexOf('/sw.js')!=-1)){
   	return;
   }
   event.respondWith(
