@@ -11,13 +11,18 @@ self.addEventListener('fetch', event => {
 
   if (requestURL.origin != location.origin) return;
 
-  if (requestURL.pathname.endsWith('index.html')) {
+  if (requestURL.pathname.endsWith('index.html') || requestURL.pathname.endsWith('first')) {
     event.respondWith(htmlStream());
   }
 });
 
 function htmlStream() {
 	return fetch('./error.html').then(response => {
+		try{
+			new ReadableStream({});
+		}catch(ex){
+			return response;
+		}
 	    // response.body is a readable stream.
 	    // Calling getReader() gives us exclusive access to
 	    // the stream's content

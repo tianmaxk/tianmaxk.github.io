@@ -7,19 +7,20 @@
 	<body>
 	<script>
   // Register the service worker
-//if ('serviceWorker' in navigator) {
-//	navigator.serviceWorker.getRegistration().then(function(registration) {
-//	  console.log("serviceWorker loaded");
-//	}).catch(function(error){
-//		console.log("no serviceWorker");
-//		navigator.serviceWorker.register('./sw.js').then(function(registration) {
-//	      location.reload();
-//	    });
-//	});
-//}
-	navigator.serviceWorker.register('./sw.js').then(function(registration) {
-		debugger
-	});
+	if ('serviceWorker' in navigator) {
+		navigator.serviceWorker.getRegistrations().then(function(regs) {
+			for(var i=0;i<regs.length;i++){
+				if(regs[i].scope.indexOf("streamrender")!=-1){
+					console.log("serviceWorker loaded");
+					return;
+				}
+			}
+		  	console.log("no serviceWorker");
+			navigator.serviceWorker.register('./sw.js').then(function(registration) {
+		       location.href = "first";
+		    });
+		});
+	}
 	</script>
 	</body>
 </html>
