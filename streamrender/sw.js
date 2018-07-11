@@ -18,48 +18,97 @@ self.addEventListener('fetch', event => {
 
 function htmlStream() {
 	return fetch('./error.html').then(response => {
+		var reader;
 		try{
+			reader = response.body.getReader();
 			new ReadableStream({});
 		}catch(ex){
 			return response;
 		}
-	    // response.body is a readable stream.
-	    // Calling getReader() gives us exclusive access to
-	    // the stream's content
-	    var reader = response.body.getReader();
+
 	    var bytesReceived = 0;
+	    var isdone = false;
+	    var html = [];
+	    reader.read().then(function processResult(result) {
+	        if (result.done) {
+	           console.log("Fetch complete");
+	           isdone = true;
+	           return;
+	        }
 
-	    const stream = new ReadableStream({
-		  start: controller => {
-			// read() returns a promise that resolves
-		    // when a value has been received
-		    reader.read().then(function processResult(result) {
-		        // Result objects contain two properties:
-		        // done  - true if the stream has already given
-		        //         you all its data.
-		        // value - some data. Always undefined when
-		        //         done is true.
-		        if (result.done) {
-		           console.log("Fetch complete");
-		           controller.close();
-		           return;
+	        // result.value for fetch streams is a Uint8Array
+	        bytesReceived += result.value.length;
+	        console.log('Received', bytesReceived, 'bytes of data so far');
+	        html.push(result.value);
+
+	        // Read some more, and call this function again
+	        return reader.read().then(processResult);
+	    });
+
+		const stream = new ReadableStream({
+		    start: controller => {
+		      let pos = 0;
+
+		      function push() {
+		        if (isdone && pos >= html.length) {
+		          controller.close();
+		          html.length = 0;
+		          return;
 		        }
-	
-		        // result.value for fetch streams is a Uint8Array
-		        bytesReceived += result.value.length;
-		        console.log('Received', bytesReceived, 'bytes of data so far');
-		        controller.enqueue(result.value);
+		        if(pos < html.length){
+		        		controller.enqueue(
+			          html[pos]
+			        );
+			        pos++;
+		        }
+		        setTimeout(push, 0);
+		      }
 
-		        // Read some more, and call this function again
-		        return reader.read().then(processResult);
-		    });
-		  }
-		});
+		      push();
+		    }
+		  });
 
-		return new Response(stream, {
-		  headers: {
-		    'Content-Type': 'text/html'
-		  }
-		});
+		  return new Response(stream, {
+		    headers: {
+		      'Content-Type': 'text/html'
+		    }
+		  });
 	});
+
+//	return fetch('./error.html').then(response => {
+//		try{
+//			new ReadableStream({});
+//		}catch(ex){
+//			return response;
+//		}
+//
+//	    var reader = response.body.getReader();
+//	    var bytesReceived = 0;
+//
+//	    const stream = new ReadableStream({
+//		  start: controller => {
+//		    reader.read().then(function processResult(result) {
+//		        if (result.done) {
+//		           console.log("Fetch complete");
+//		           controller.close();
+//		           return;
+//		        }
+//	
+//		        // result.value for fetch streams is a Uint8Array
+//		        bytesReceived += result.value.length;
+//		        console.log('Received', bytesReceived, 'bytes of data so far');
+//		        controller.enqueue(result.value);
+//
+//		        // Read some more, and call this function again
+//		        return reader.read().then(processResult);
+//		    });
+//		  }
+//		});
+//
+//		return new Response(stream, {
+//		  headers: {
+//		    'Content-Type': 'text/html'
+//		  }
+//		});
+//	});
 }
